@@ -5,7 +5,7 @@ const signup = async (req,res,next)=>{
 
     // We capture the data and store in the database
     const { username, email, password } = req.body;
-    const hashedPassword = bcrypt.hashSync(password,10)
+    const hashedPassword = bcrypt.hashSync(password,10);
     const newUser = new User({ username,email,hashedPassword});
 
     try {
