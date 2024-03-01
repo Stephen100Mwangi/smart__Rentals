@@ -20,12 +20,14 @@ mongoose.connect(process.env.MONGO_CONNECTION).then(() => {
 // Initialize app
 const app = express();
 
+
+// Middlewares
+app.use(express.json());
+
 // Routers
 app.use("/server/user", user_router);
 app.use("/server/auth", authRouter);
 
-// Middlewares
-app.use(express.json())
 
 // PORT Listening
 app.listen(process.env.PORT || 3455,()=>{
