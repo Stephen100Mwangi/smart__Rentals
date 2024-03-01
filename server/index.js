@@ -20,14 +20,13 @@ mongoose.connect(process.env.MONGO_CONNECTION).then(() => {
 // Initialize app
 const app = express();
 
+// Test Route
+app.get("/test", (req,res) => {
+    res.status(200).json("Hello")
+})
 
 // Middlewares
 app.use(express.json());
-
-// Routers
-app.use("/server/user", user_router);
-app.use("/server/auth", authRouter);
-
 
 // PORT Listening
 app.listen(process.env.PORT || 3455,()=>{
@@ -35,7 +34,18 @@ app.listen(process.env.PORT || 3455,()=>{
 })
 
 
-// Test Route
-app.get("/test", (req,res) => {
-    res.status(200).json("Hello")
-})
+
+
+// Routers
+app.use("/server/user", user_router);
+app.use("/server/auth", authRouter);
+
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
+    const message = error.message || "Interal Server error";
+    return req.status(statusCode).json({
+        success: true,
+        statusCode,
+        message,
+    });
+});
