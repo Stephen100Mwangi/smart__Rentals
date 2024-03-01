@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { error } from 'console';
 
 import user_router from './Routes/userRoute.js';
+import authRouter from './Routes/authroute.js';
 
 dotenv.config();
 
@@ -18,11 +19,21 @@ mongoose.connect(process.env.MONGO_CONNECTION).then(() => {
 
 // Initialize app
 const app = express();
-app.use("/server/user", user_router)
+
+// Routers
+app.use("/server/user", user_router);
+app.use("/server/auth", authRouter);
+
+// Middlewares
+app.use(express.json())
+
+// PORT Listening
 app.listen(process.env.PORT || 3455,()=>{
     console.log(`Server running on port http://localhost:${process.env.PORT}`);
 })
 
+
+// Test Route
 app.get("/test", (req,res) => {
     res.status(200).json("Hello")
 })
