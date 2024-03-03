@@ -1,10 +1,10 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
+import cors from 'cors'
 import { error } from 'console';
-
-import user_router from './Routes/userRoute.js';
-import authRouter from './Routes/authroute.js';
+import bcrypt from 'bcryptjs'
+import User from './Models/UserModel.js';
 
 dotenv.config();
 
@@ -26,26 +26,47 @@ app.get("/test", (req,res) => {
 })
 
 // Middlewares
+app.use(cors());
 app.use(express.json());
 
 // PORT Listening
-app.listen(process.env.PORT || 3455,()=>{
+app.listen(process.env.PORT,()=>{
     console.log(`Server running on port http://localhost:${process.env.PORT}`);
 })
 
 
+// Create new user
+app.post("/register", async(req,res) =>{
+    try {
+        const hashedPassword = bcrypt.hashSync(req.body.password,10);
+        await User.create({username: req.body.username, email: req.body.email, password: hashedPassword});
+        res.status(201).send("Success");
+    } catch (error) {
+        res.status(400).send("User creation FAILED");
+        console.log(error);
+    }
+})
 
+app.post("/login", async(req,res) => {
+    try {
+        await User.findOne({email: req.body.email}).then((user) => {
+            if (user) {
+                const passMatch = bcrypt.compare(req.body.password, user.password);
+                if (passMatch) {
+                    const name = user.username;
+                    res.status(200).send("Usersuccessfullyloggedin " + name);
 
-// Routers
-app.use("/server/user", user_router);
-app.use("/server/auth", authRouter);
+                  
+                }else{
+                    res.status(400).send("Wrong password.Please try again");
+                }
+            }else{
+                res.status(404).send("User does not exist");
+            }
+        })
+    } catch (error) {
+        res.status(400).send("User login failed")
+        
+    }
+})
 
-app.use((err, req, res, next) => {
-    const statusCode = err.statusCode || 500;
-    const message = error.message || "Interal Server error";
-    return req.status(statusCode).json({
-        success: true,
-        statusCode,
-        message,
-    });
-});
