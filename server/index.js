@@ -5,6 +5,7 @@ import cors from 'cors'
 import { error } from 'console';
 import bcrypt from 'bcryptjs'
 import User from './Models/UserModel.js';
+import jwt from 'jsonwebtoken'
 
 dotenv.config();
 
@@ -47,25 +48,29 @@ app.post("/register", async(req,res) =>{
     }
 })
 
-app.post("/login", async(req,res) => {
+app.post("/login", async (req,res) => {
     try {
-        await User.findOne({email: req.body.email}).then((user) => {
-            if (user) {
-                const passMatch = bcrypt.compare(req.body.password, user.password);
-                if (passMatch) {
-                    const name = user.username;
-                    res.status(200).send("Usersuccessfullyloggedin " + name);
-
-                  
-                }else{
-                    res.status(400).send("Wrong password.Please try again");
-                }
-            }else{
-                res.status(404).send("User does not exist");
+        await User.findOne({email: req.body.email}).then(async (user) => {
+            if (!user) {
+                res.status(400).send("Wrong email or password")
             }
+
+            const passMatch = await bcrypt.compare(req.body.password, user.password);
+
+            if (!passMatch) {
+                res.status(400).send("Wrong email or password.Please try again");
+            }
+
+            // Create a token
+            const token = jwt.sign({id: user._id}, process.env.SECRET);
+            // Save token as a cookie
+            res.cookie('access_token',token,{httpOnly: true}).status(200).json(user);
+
+            res.status(200).send("User successfully logged in ");
         })
     } catch (error) {
-        res.status(400).send("User login failed")
+        console.error("Error logging in:", error);
+        res.status(500).send("An internal server error occurred"); 
         
     }
 })
