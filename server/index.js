@@ -6,12 +6,13 @@ import { error } from 'console';
 import bcrypt from 'bcryptjs'
 import User from './Models/UserModel.js';
 import jwt from 'jsonwebtoken'
+import RentList from './Models/ListingModel.js';
 
 dotenv.config();
 
 // Check whether connected
 mongoose.connect(process.env.MONGO_CONNECTION).then(() => {  
-    console.log("Connected to MogoDB");
+    console.log("Connected to MongoDB");
 }).catch((error)=>{
     console.log(error);
 })
@@ -72,6 +73,53 @@ app.post("/login", async (req,res) => {
         console.error("Error logging in:", error);
         res.status(500).send("An internal server error occurred"); 
         
+    }
+})
+
+
+// Create a house
+app.post("/house", async(req,res) => {
+    try {
+        const requiredFields = ['name', 'price', 'renttype', 'capacity'];
+        const missingFields = requiredFields.filter(field => !req.body[field]);
+
+        if (missingFields.length > 0) {
+            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+        await RentList.create({name: req.body.name, price: req.body.price, renttype: req.body.renttype, capacity: req.body.capacity});
+        res.status(201).send("Success")
+            
+        
+        
+    } catch (error) {
+        console.error(error);
+
+        if (error.name === 'ValidationError') {
+            // Handle validation errors (e.g., invalid data types)
+            const errors = {};
+            for (const field in error.errors) {
+                errors[field] = error.errors[field].message;
+            }
+            res.status(400).json({ error: 'Validation error', details: errors });
+        } else if (error.code === 11000) { // Handle duplicate key errors (e.g., unique constraint violations)
+            res.status(400).json({ error: 'Duplicate house name detected' }); // Adjust message as needed
+        } else {
+            // Handle other errors (e.g., server errors)
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+   
+})
+
+
+// Fetch all houses
+app.get("/houses", async(req,res) => {
+    try {
+        await RentList.find();
+        res.status(200).send("Good")
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("An internal error ccured while retrieving the houses")
     }
 })
 
